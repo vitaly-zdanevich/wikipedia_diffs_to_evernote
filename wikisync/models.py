@@ -44,6 +44,11 @@ class Edit:
             is_top=bool(item.get("top", False)),
         )
 
+    @property
+    def lang(self) -> str:
+        """Short wiki label from the host, e.g. 'en', 'ru', 'be-tarask', 'commons'."""
+        return self.host.split(".")[0]
+
     # --- URL builders -----------------------------------------------------
     def _wiki(self, title: str) -> str:
         return f"https://{self.host}/wiki/" + quote(title.replace(" ", "_"), safe="/:()_,'!.&%-+")

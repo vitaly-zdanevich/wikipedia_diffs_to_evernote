@@ -24,6 +24,8 @@ MediaWiki API ──> Edit objects ──> render ──> Sink.export()  (Everno
 ```
 
 - **No Wikipedia auth.** Contributions and diffs come from the public API.
+- **Multiple wikis.** `WIKIPEDIA_LANG` accepts a comma-separated list (e.g. `en,ru,be,be-tarask`);
+  the same username is synced on each edition independently. Notes are prefixed with `[lang]`.
 - **Evernote auth is just a developer token** (Premium accounts can mint one), stored
   as a GitHub Secret — no interactive OAuth at runtime.
 - **Idempotent.** A committed `state.json` records the last-synced revision per
@@ -75,9 +77,9 @@ All configuration is via environment variables; the full annotated list is in
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `WIKIPEDIA_USERNAME` | — (required) | User whose edits to sync |
-| `WIKIPEDIA_LANG` | `en` | Wikipedia edition (`<lang>.wikipedia.org`) |
-| `WIKIPEDIA_HOST` | — | Override host for non-Wikipedia wikis (e.g. `commons.wikimedia.org`) |
+| `WIKIPEDIA_USERNAME` | — (required) | User whose edits to sync (the same name is looked up on every wiki) |
+| `WIKIPEDIA_LANG` | `en` | Comma-separated language edition(s) → `<lang>.wikipedia.org`. e.g. `en,ru,be,be-tarask` |
+| `WIKIPEDIA_HOST` | — | Comma-separated host override for non-Wikipedia wikis (e.g. `commons.wikimedia.org`); takes precedence over `WIKIPEDIA_LANG` |
 | `EXPORT_TARGETS` | `evernote` | Comma-separated sinks: `evernote,notion,stdout` |
 | `EXPORT_DEDUP` | `true` | Skip edits already exported |
 | `MAX_EDITS_PER_RUN` | `50` | Cap per run; remainder syncs next run |

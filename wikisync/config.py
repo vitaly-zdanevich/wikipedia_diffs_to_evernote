@@ -30,14 +30,15 @@ _DEFAULT_UA = (
     "wikisync/1.0 (https://github.com/; diffs_to_evernote) python-requests"
 )
 
-# Default note title, formatted with .format(title=, date=, sizediff=, revid=, user=, host=).
-_DEFAULT_TITLE = "{title} — {date:%Y-%m-%d %H:%M} ({sizediff:+d} B)"
+# Default note title, formatted with .format(title=, date=, sizediff=, revid=, user=, host=, lang=).
+# The [lang] prefix distinguishes wikis when syncing several at once.
+_DEFAULT_TITLE = "[{lang}] {title} — {date:%Y-%m-%d %H:%M} ({sizediff:+d} B)"
 
 
 @dataclass
 class Config:
     username: str
-    host: str
+    hosts: list[str]
     targets: list[str]
     dedup: bool
     max_edits: int
@@ -53,8 +54,12 @@ class Config:
         if not username:
             raise SystemExit("WIKIPEDIA_USERNAME is required (the Wikipedia user whose edits to sync).")
 
-        lang = (env.get("WIKIPEDIA_LANG") or "en").strip() or "en"
-        host = (env.get("WIKIPEDIA_HOST") or "").strip() or f"{lang}.wikipedia.org"
+        # WIKIPEDIA_LANG is a comma-separated list of language editions ("en,ru,be,be-tarask").
+        # WIKIPEDIA_HOST (also comma-separated) overrides it for non-Wikipedia wikis.
+        langs = [s.strip() for s in (env.get("WIKIPEDIA_LANG") or "en").split(",") if s.strip()] or ["en"]
+        explicit_hosts = [s.strip() for s in (env.get("WIKIPEDIA_HOST") or "").split(",") if s.strip()]
+        hosts = explicit_hosts or [f"{lang}.wikipedia.org" for lang in langs]
+        hosts = list(dict.fromkeys(hosts))  # de-dupe, preserve order
 
         targets = [t.strip().lower() for t in (env.get("EXPORT_TARGETS") or "evernote").split(",") if t.strip()]
         if not targets:
@@ -62,7 +67,7 @@ class Config:
 
         return cls(
             username=username,
-            host=host,
+            hosts=hosts,
             targets=targets,
             dedup=env_bool(env.get("EXPORT_DEDUP"), default=True),
             max_edits=_int(env.get("MAX_EDITS_PER_RUN"), 50),
