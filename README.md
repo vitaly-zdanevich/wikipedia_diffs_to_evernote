@@ -1,5 +1,16 @@
 # wikipedia_diffs_to_evernote
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_wikipedia_diffs_to_evernote&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_wikipedia_diffs_to_evernote)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_wikipedia_diffs_to_evernote&metric=coverage)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_wikipedia_diffs_to_evernote)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_wikipedia_diffs_to_evernote&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_wikipedia_diffs_to_evernote)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_wikipedia_diffs_to_evernote&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_wikipedia_diffs_to_evernote)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_wikipedia_diffs_to_evernote&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_wikipedia_diffs_to_evernote)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_wikipedia_diffs_to_evernote&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_wikipedia_diffs_to_evernote)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_wikipedia_diffs_to_evernote&metric=bugs)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_wikipedia_diffs_to_evernote)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_wikipedia_diffs_to_evernote&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_wikipedia_diffs_to_evernote)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_wikipedia_diffs_to_evernote&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_wikipedia_diffs_to_evernote)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_wikipedia_diffs_to_evernote&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_wikipedia_diffs_to_evernote)
+
 Sync a Wikipedia user's edits to your notes. A daily [GitHub Actions](#github-actions-setup)
 cron reads a user's contributions from the MediaWiki API and creates **one note per edit**,
 each containing:
@@ -121,6 +132,23 @@ All configuration is via environment variables; the full annotated list is in
 3. Add `mysink` to `EXPORT_TARGETS`. Done.
 
 `wikisync/sinks/stdout.py` is the minimal worked example.
+
+## Code quality (SonarQube Cloud)
+
+Static analysis and test coverage run on every push via
+[`.github/workflows/sonar.yml`](.github/workflows/sonar.yml) and publish to
+[SonarQube Cloud](https://sonarcloud.io) (the badges above). One-time setup:
+
+1. Sign in to https://sonarcloud.io with GitHub and **import this repo**. The defaults
+   used here are organization `vitaly-zdanevich` and project key
+   `vitaly-zdanevich_wikipedia_diffs_to_evernote` — if yours differ, update
+   [`sonar-project.properties`](sonar-project.properties) and the badge URLs above.
+2. In the SonarCloud project, **Administration → Analysis Method → turn _off_ Automatic
+   Analysis** (CI-based analysis is required to ingest the coverage report).
+3. Add a repository **Secret** `SONAR_TOKEN` (SonarCloud → *My Account → Security → Generate Token*).
+
+Until `SONAR_TOKEN` is set, the workflow still runs the tests and coverage; it just skips
+the upload step (so CI stays green).
 
 ## Notes & limits
 

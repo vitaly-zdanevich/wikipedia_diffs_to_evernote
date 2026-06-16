@@ -1,0 +1,35 @@
+name: SonarQube Cloud
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  sonar:
+    name: Analyze
+    runs-on: ubuntu-latest
+    env:
+      # Exposed as env so the scan step can be skipped until the secret is set.
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0   # full history → accurate "new code" detection & blame
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Run tests with coverage
+        run: |
+          pip install -r requirements.txt pytest pytest-cov
+          pytest --cov=wikisync --cov-report=xml --cov-report=term-missing
+
+      - name: SonarQube Cloud scan
+        if: ${{ env.SONAR_TOKEN != '' }}   # skipped until SONAR_TOKEN is configured
+        uses: SonarSource/sonarqube-scan-action@v8.2.0
+        env:
+          SONAR_HOST_URL: https://sonarcloud.io

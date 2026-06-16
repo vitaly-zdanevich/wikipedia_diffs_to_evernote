@@ -7,3 +7,7 @@ venv/
 .pytest_cache/
 *.egg-info/
 .claude/
+.coverage
+coverage.xml
+htmlcov/
+.scannerwork/
