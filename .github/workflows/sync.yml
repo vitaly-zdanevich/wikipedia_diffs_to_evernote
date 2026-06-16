@@ -1,0 +1,62 @@
+name: Sync Wikipedia edits to notes
+
+on:
+  schedule:
+    - cron: "17 6 * * *"   # daily at 06:17 UTC
+  workflow_dispatch: {}     # allow manual runs from the Actions tab
+
+concurrency:
+  group: wikisync
+  cancel-in-progress: false
+
+permissions:
+  contents: write           # to commit the updated state.json back
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Sync edits
+        env:
+          # --- Core (set as repository Variables) ---
+          WIKIPEDIA_USERNAME: ${{ vars.WIKIPEDIA_USERNAME }}
+          WIKIPEDIA_LANG: ${{ vars.WIKIPEDIA_LANG }}
+          WIKIPEDIA_HOST: ${{ vars.WIKIPEDIA_HOST }}
+          EXPORT_TARGETS: ${{ vars.EXPORT_TARGETS }}
+          EXPORT_DEDUP: ${{ vars.EXPORT_DEDUP }}
+          MAX_EDITS_PER_RUN: ${{ vars.MAX_EDITS_PER_RUN }}
+          FIRST_RUN_LOOKBACK_DAYS: ${{ vars.FIRST_RUN_LOOKBACK_DAYS }}
+          NOTE_TITLE_TEMPLATE: ${{ vars.NOTE_TITLE_TEMPLATE }}
+          WIKIPEDIA_USER_AGENT: ${{ vars.WIKIPEDIA_USER_AGENT }}
+          LOG_LEVEL: ${{ vars.LOG_LEVEL }}
+          # --- Evernote (token is a Secret; the rest are Variables) ---
+          EVERNOTE_DEV_TOKEN: ${{ secrets.EVERNOTE_DEV_TOKEN }}
+          EVERNOTE_NOTEBOOK: ${{ vars.EVERNOTE_NOTEBOOK }}
+          EVERNOTE_TAGS: ${{ vars.EVERNOTE_TAGS }}
+          EVERNOTE_SANDBOX: ${{ vars.EVERNOTE_SANDBOX }}
+          # --- Notion (optional) ---
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ vars.NOTION_DATABASE_ID }}
+        run: python -m wikisync
+
+      - name: Persist sync state
+        if: ${{ always() }}   # commit progress even if some edits failed
+        run: |
+          if [[ -n "$(git status --porcelain state.json)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add state.json
+            git commit -m "chore(sync): update state [skip ci]"
+            git push
+          else
+            echo "No state change to commit."
+          fi

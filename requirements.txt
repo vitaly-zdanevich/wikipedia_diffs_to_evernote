@@ -1,0 +1,4 @@
+requests>=2.31
+lxml>=5.0
+evernote3==1.25.14
+thrift>=0.11.0
