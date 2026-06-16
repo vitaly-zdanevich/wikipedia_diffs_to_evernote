@@ -1,4 +1,4 @@
-# diffs_to_evernote
+# wikipedia_diffs_to_evernote
 
 Sync a Wikipedia user's edits to your notes. A daily [GitHub Actions](#github-actions-setup)
 cron reads a user's contributions from the MediaWiki API and creates **one note per edit**,
