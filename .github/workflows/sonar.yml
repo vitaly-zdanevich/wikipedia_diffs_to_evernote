@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read   # least privilege: the scan only reads the repo; upload uses SONAR_TOKEN
+                   # (add `pull-requests: write` if you enable Sonar PR decoration)
+
 jobs:
   sonar:
     name: Analyze
