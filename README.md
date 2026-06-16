@@ -158,3 +158,15 @@ the upload step (so CI stays green).
 - New-page edits embed the created **wikitext** (there is no "previous" revision to
   diff against); regular edits embed the two-column visual diff.
 - Very large diffs are linked rather than embedded to stay under note-size limits.
+
+## Development
+
+```bash
+pip install -r requirements.txt ruff pytest pytest-cov
+ruff check . && ruff format --check .   # lint + format (single-quote style; CI-enforced)
+pytest                                   # unit tests
+```
+
+## License
+
+[MIT](LICENSE) © Vitaly Zdanevich
