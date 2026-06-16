@@ -1,0 +1,11 @@
+target-version = "py313"
+line-length = 120
+
+[format]
+# Prefer single quotes (falls back to double only when a string contains a ').
+quote-style = "single"
+
+[lint]
+# Pyflakes (F), pycodestyle (E/W), import sorting (I), bugbear (B),
+# pyupgrade (UP), comprehensions (C4), simplify (SIM).
+select = ["E", "F", "W", "I", "B", "UP", "C4", "SIM"]

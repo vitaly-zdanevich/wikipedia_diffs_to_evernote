@@ -6,4 +6,4 @@ the date, the byte-size change, a link to the diff on Wikipedia, and the diff it
 The export destination is pluggable: see ``wikisync.sinks``.
 """
 
-__version__ = "1.0.0"
+__version__ = '1.0.0'

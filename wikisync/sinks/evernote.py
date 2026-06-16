@@ -27,26 +27,25 @@ from .base import Sink
 log = logging.getLogger(__name__)
 
 _ENML_HEADER = (
-    '<?xml version="1.0" encoding="UTF-8"?>\n'
-    '<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">\n'
+    '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">\n'
 )
 # Keep notes comfortably under Evernote's 5 MB ENML limit.
 _MAX_DIFF_CHARS = 400_000
 
 
 def _esc(text: str) -> str:
-    return escape(text or "")
+    return escape(text or '')
 
 
 def _attr(value: str) -> str:
     # quoteattr returns the value *with* surrounding quotes, XML-escaped.
-    return quoteattr(value or "")
+    return quoteattr(value or '')
 
 
 class EvernoteSink(Sink):
-    name = "evernote"
+    name = 'evernote'
 
-    def __init__(self, token, notebook=None, service_host="www.evernote.com", dedup=True, tags=None):
+    def __init__(self, token, notebook=None, service_host='www.evernote.com', dedup=True, tags=None):
         self.token = token
         self.notebook_name = notebook
         self.service_host = service_host
@@ -57,29 +56,27 @@ class EvernoteSink(Sink):
 
     @classmethod
     def from_env(cls, env, dedup):
-        token = (env.get("EVERNOTE_DEV_TOKEN") or "").strip()
+        token = (env.get('EVERNOTE_DEV_TOKEN') or '').strip()
         if not token:
             raise SystemExit("EVERNOTE_DEV_TOKEN is required for the 'evernote' sink.")
-        if env_bool(env.get("EVERNOTE_SANDBOX")):
-            service_host = "sandbox.evernote.com"
+        if env_bool(env.get('EVERNOTE_SANDBOX')):
+            service_host = 'sandbox.evernote.com'
         else:
-            service_host = (env.get("EVERNOTE_SERVICE_HOST") or "www.evernote.com").strip()
-        tags = [t.strip() for t in (env.get("EVERNOTE_TAGS") or "").split(",") if t.strip()]
+            service_host = (env.get('EVERNOTE_SERVICE_HOST') or 'www.evernote.com').strip()
+        tags = [t.strip() for t in (env.get('EVERNOTE_TAGS') or '').split(',') if t.strip()]
         return cls(
             token=token,
-            notebook=(env.get("EVERNOTE_NOTEBOOK") or "").strip() or None,
+            notebook=(env.get('EVERNOTE_NOTEBOOK') or '').strip() or None,
             service_host=service_host,
             dedup=dedup,
             tags=tags,
         )
 
     # --- Thrift plumbing --------------------------------------------------
-    def _store(self) -> "NoteStore.Client":
+    def _store(self) -> NoteStore.Client:
         if self._note_store is None:
-            user_store_uri = f"https://{self.service_host}/edam/user"
-            user_store = UserStore.Client(
-                TBinaryProtocol.TBinaryProtocol(THttpClient.THttpClient(user_store_uri))
-            )
+            user_store_uri = f'https://{self.service_host}/edam/user'
+            user_store = UserStore.Client(TBinaryProtocol.TBinaryProtocol(THttpClient.THttpClient(user_store_uri)))
             note_store_url = user_store.getNoteStoreUrl(self.token)
             self._note_store = NoteStore.Client(
                 TBinaryProtocol.TBinaryProtocol(THttpClient.THttpClient(note_store_url))
@@ -98,7 +95,7 @@ class EvernoteSink(Sink):
             else:
                 created = store.createNotebook(self.token, Notebook(name=self.notebook_name))
                 self._notebook_guid = created.guid
-                log.info("Created Evernote notebook %r", self.notebook_name)
+                log.info('Created Evernote notebook %r', self.notebook_name)
         return self._notebook_guid
 
     # --- Sink API ---------------------------------------------------------
@@ -112,7 +109,7 @@ class EvernoteSink(Sink):
             )
             return (result.totalNotes or 0) > 0
         except EDAMUserException as exc:
-            log.warning("Evernote dedup search failed (%s); will create anyway.", exc)
+            log.warning('Evernote dedup search failed (%s); will create anyway.', exc)
             return False
 
     def export(self, edit: Edit, diff: DiffContent, title: str) -> None:
@@ -121,7 +118,7 @@ class EvernoteSink(Sink):
         note.content = self._build_enml(edit, diff)
         attributes = NoteAttributes()
         attributes.sourceURL = edit.diff_url
-        attributes.sourceApplication = "diffs_to_evernote"
+        attributes.sourceApplication = 'diffs_to_evernote'
         note.attributes = attributes
         notebook_guid = self._resolve_notebook()
         if notebook_guid:
@@ -132,13 +129,13 @@ class EvernoteSink(Sink):
 
     # --- ENML construction ------------------------------------------------
     def _build_enml(self, edit: Edit, diff: DiffContent) -> str:
-        sign_color = "#187a18" if edit.sizediff > 0 else ("#a11111" if edit.sizediff < 0 else "#555555")
+        sign_color = '#187a18' if edit.sizediff > 0 else ('#a11111' if edit.sizediff < 0 else '#555555')
         flags = []
         if edit.is_new:
-            flags.append("new page")
+            flags.append('new page')
         if edit.is_minor:
-            flags.append("minor")
-        flag_text = f" · {', '.join(flags)}" if flags else ""
+            flags.append('minor')
+        flag_text = f' · {", ".join(flags)}' if flags else ''
 
         parts = [
             f'<div style="font-size:15px;margin-bottom:6px;">'
@@ -150,30 +147,28 @@ class EvernoteSink(Sink):
             f'{_esc(flag_text)}</div>',
         ]
         if edit.comment:
-            parts.append(
-                f'<div style="margin-bottom:4px;color:#444444;">Summary: <i>{_esc(edit.comment)}</i></div>'
-            )
+            parts.append(f'<div style="margin-bottom:4px;color:#444444;">Summary: <i>{_esc(edit.comment)}</i></div>')
         parts.append(
             f'<div style="margin-bottom:8px;"><a href={_attr(edit.diff_url)}>View diff on Wikipedia →</a></div>'
         )
         parts.append('<hr/>')
         parts.append(self._render_diff(diff))
-        return _ENML_HEADER + "<en-note>" + "".join(parts) + "</en-note>"
+        return _ENML_HEADER + '<en-note>' + ''.join(parts) + '</en-note>'
 
     def _render_diff(self, diff: DiffContent) -> str:
-        if diff.kind == "diff" and diff.html:
+        if diff.kind == 'diff' and diff.html:
             try:
                 xhtml = render.diff_rows_to_xhtml(diff.html)
             except Exception as exc:
-                log.warning("Diff render failed (%s); linking instead.", exc)
+                log.warning('Diff render failed (%s); linking instead.', exc)
                 return '<div><i>Diff could not be rendered inline — use the link above.</i></div>'
             if len(xhtml) > _MAX_DIFF_CHARS:
                 return '<div><i>Diff is too large to embed — use the link above to view it.</i></div>'
             return xhtml
-        if diff.kind == "newpage" and diff.html:
+        if diff.kind == 'newpage' and diff.html:
             text = diff.html
             if len(text) > _MAX_DIFF_CHARS:
-                text = text[:_MAX_DIFF_CHARS] + "\n… (truncated)"
+                text = text[:_MAX_DIFF_CHARS] + '\n… (truncated)'
             return (
                 '<div style="background:#d6f5d6;border:1px solid #b5e6b5;padding:6px;'
                 'white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:12px;">'

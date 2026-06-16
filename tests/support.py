@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import requests
 
@@ -31,11 +31,19 @@ SAMPLE_ROWS = """
 
 
 def make_edit(**kw) -> Edit:
-    base = dict(
-        host="en.wikipedia.org", username="Tester", revid=100, parentid=99,
-        title="Test Page", timestamp=datetime(2026, 6, 12, 22, 0, tzinfo=timezone.utc),
-        comment="a comment", sizediff=42, is_new=False, is_minor=False, is_top=True,
-    )
+    base = {
+        'host': 'en.wikipedia.org',
+        'username': 'Tester',
+        'revid': 100,
+        'parentid': 99,
+        'title': 'Test Page',
+        'timestamp': datetime(2026, 6, 12, 22, 0, tzinfo=UTC),
+        'comment': 'a comment',
+        'sizediff': 42,
+        'is_new': False,
+        'is_minor': False,
+        'is_top': True,
+    }
     base.update(kw)
     return Edit(**base)
 
@@ -43,7 +51,7 @@ def make_edit(**kw) -> Edit:
 class FakeResp:
     """Stand-in for a requests.Response."""
 
-    def __init__(self, json_data=None, status_code=200, text=""):
+    def __init__(self, json_data=None, status_code=200, text=''):
         self._json = {} if json_data is None else json_data
         self.status_code = status_code
         self.text = text
@@ -65,11 +73,11 @@ class FakeSession:
         self.headers = {}
 
     def get(self, url, params=None, timeout=None):
-        self.calls.append(("GET", url, params))
+        self.calls.append(('GET', url, params))
         return self._next(params)
 
     def post(self, url, json=None, timeout=None):
-        self.calls.append(("POST", url, json))
+        self.calls.append(('POST', url, json))
         return self._next(json)
 
     def _next(self, payload):
@@ -107,7 +115,7 @@ class FakeNoteStore:
         return self.notebooks
 
     def createNotebook(self, token, notebook):
-        notebook.guid = "nb-guid"
+        notebook.guid = 'nb-guid'
         self.created_notebooks.append(notebook)
         self.notebooks.append(notebook)
         return notebook

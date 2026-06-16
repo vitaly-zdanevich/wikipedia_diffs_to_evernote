@@ -17,29 +17,29 @@ def load(path: str) -> dict:
     if not os.path.exists(path):
         return {}
     try:
-        with open(path, encoding="utf-8") as fh:
+        with open(path, encoding='utf-8') as fh:
             return json.load(fh) or {}
     except Exception as exc:
-        log.warning("Could not read state %s (%s); starting fresh.", path, exc)
+        log.warning('Could not read state %s (%s); starting fresh.', path, exc)
         return {}
 
 
 def save(path: str, state: dict) -> None:
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as fh:
+    tmp = path + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as fh:
         json.dump(state, fh, indent=2, sort_keys=True, ensure_ascii=False)
-        fh.write("\n")
+        fh.write('\n')
     os.replace(tmp, path)
 
 
 def _key(host: str, username: str) -> str:
-    return f"{host}|{username}"
+    return f'{host}|{username}'
 
 
 def get(state: dict, host: str, username: str) -> tuple[int | None, str | None]:
     entry = state.get(_key(host, username)) or {}
-    return entry.get("last_revid"), entry.get("last_timestamp")
+    return entry.get('last_revid'), entry.get('last_timestamp')
 
 
 def update(state: dict, host: str, username: str, last_revid: int, last_timestamp: str | None) -> None:
-    state[_key(host, username)] = {"last_revid": last_revid, "last_timestamp": last_timestamp}
+    state[_key(host, username)] = {'last_revid': last_revid, 'last_timestamp': last_timestamp}

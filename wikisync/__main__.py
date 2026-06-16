@@ -14,10 +14,10 @@ def main() -> None:
     config = Config.from_env(os.environ)
     logging.basicConfig(
         level=getattr(logging, config.log_level, logging.INFO),
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        format='%(asctime)s %(levelname)s %(name)s: %(message)s',
     )
     sys.exit(run(config, os.environ))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

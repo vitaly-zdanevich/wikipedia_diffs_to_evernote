@@ -18,11 +18,11 @@ from ..models import DiffContent, Edit
 
 class Sink(ABC):
     #: Short identifier used in ``EXPORT_TARGETS`` and the registry.
-    name: str = "sink"
+    name: str = 'sink'
 
     @classmethod
     @abstractmethod
-    def from_env(cls, env, dedup: bool) -> "Sink":
+    def from_env(cls, env, dedup: bool) -> Sink:
         """Build the sink from environment variables (its own credentials/config)."""
 
     @abstractmethod

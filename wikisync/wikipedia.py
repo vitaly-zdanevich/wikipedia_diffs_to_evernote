@@ -6,8 +6,8 @@ No authentication required. Uses formatversion=2 for clean JSON shapes.
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
 from datetime import datetime
-from typing import Iterator
 
 import requests
 
@@ -23,18 +23,18 @@ _PAGE_SIZE = 500
 class Wikipedia:
     def __init__(self, host: str, user_agent: str, session: requests.Session | None = None, timeout: int = 30):
         self.host = host
-        self.api_url = f"https://{host}/w/api.php"
+        self.api_url = f'https://{host}/w/api.php'
         self.timeout = timeout
         self.session = session or requests.Session()
-        self.session.headers.update({"User-Agent": user_agent})
+        self.session.headers.update({'User-Agent': user_agent})
 
     def _get(self, params: dict) -> dict:
-        params = {**params, "format": "json", "formatversion": "2"}
+        params = {**params, 'format': 'json', 'formatversion': '2'}
         resp = self.session.get(self.api_url, params=params, timeout=self.timeout)
         resp.raise_for_status()
         data = resp.json()
-        if "error" in data:
-            raise RuntimeError(f"MediaWiki API error: {data['error']}")
+        if 'error' in data:
+            raise RuntimeError(f'MediaWiki API error: {data["error"]}')
         return data
 
     def iter_contributions(
@@ -49,20 +49,20 @@ class Wikipedia:
         ``cutoff``, or after the hard cap. The caller decides ordering/batching.
         """
         params = {
-            "action": "query",
-            "list": "usercontribs",
-            "ucuser": username,
-            "ucprop": "ids|title|timestamp|comment|sizediff|flags",
-            "uclimit": str(_PAGE_SIZE),
+            'action': 'query',
+            'list': 'usercontribs',
+            'ucuser': username,
+            'ucprop': 'ids|title|timestamp|comment|sizediff|flags',
+            'uclimit': str(_PAGE_SIZE),
         }
         seen = 0
         uccontinue: str | None = None
         while True:
             page_params = dict(params)
             if uccontinue:
-                page_params["uccontinue"] = uccontinue
+                page_params['uccontinue'] = uccontinue
             data = self._get(page_params)
-            for item in data.get("query", {}).get("usercontribs", []):
+            for item in data.get('query', {}).get('usercontribs', []):
                 edit = Edit.from_api(item, self.host)
                 if since_revid is not None and edit.revid <= since_revid:
                     return
@@ -71,10 +71,10 @@ class Wikipedia:
                 yield edit
                 seen += 1
                 if seen >= _HARD_CAP:
-                    log.warning("Hit hard cap of %d contributions; stopping pagination.", _HARD_CAP)
+                    log.warning('Hit hard cap of %d contributions; stopping pagination.', _HARD_CAP)
                     return
-            cont = data.get("continue")
-            uccontinue = cont.get("uccontinue") if cont else None
+            cont = data.get('continue')
+            uccontinue = cont.get('uccontinue') if cont else None
             if not uccontinue:
                 return
 
@@ -82,23 +82,27 @@ class Wikipedia:
         """Fetch the change for an edit. Never raises — degrades to 'unavailable'."""
         try:
             if edit.parentid and not edit.is_new:
-                data = self._get({
-                    "action": "compare",
-                    "fromrev": edit.parentid,
-                    "torev": edit.revid,
-                    "prop": "diff",
-                })
-                body = data.get("compare", {}).get("body")
-                return DiffContent("diff", body) if body else DiffContent("unavailable")
+                data = self._get(
+                    {
+                        'action': 'compare',
+                        'fromrev': edit.parentid,
+                        'torev': edit.revid,
+                        'prop': 'diff',
+                    }
+                )
+                body = data.get('compare', {}).get('body')
+                return DiffContent('diff', body) if body else DiffContent('unavailable')
 
             # New page (no parent revision): show the created wikitext as added content.
-            data = self._get({
-                "action": "parse",
-                "oldid": edit.revid,
-                "prop": "wikitext",
-            })
-            wikitext = data.get("parse", {}).get("wikitext")
-            return DiffContent("newpage", wikitext) if wikitext else DiffContent("unavailable")
+            data = self._get(
+                {
+                    'action': 'parse',
+                    'oldid': edit.revid,
+                    'prop': 'wikitext',
+                }
+            )
+            wikitext = data.get('parse', {}).get('wikitext')
+            return DiffContent('newpage', wikitext) if wikitext else DiffContent('unavailable')
         except Exception as exc:  # network / API hiccup must not abort the run
-            log.warning("Could not fetch diff for revid %s (%s): %s", edit.revid, edit.title, exc)
-            return DiffContent("unavailable")
+            log.warning('Could not fetch diff for revid %s (%s): %s', edit.revid, edit.title, exc)
+            return DiffContent('unavailable')

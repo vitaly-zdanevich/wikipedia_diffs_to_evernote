@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import quote, urlencode
 
 
@@ -28,30 +28,30 @@ class Edit:
     is_top: bool
 
     @classmethod
-    def from_api(cls, item: dict, host: str) -> "Edit":
-        ts = datetime.strptime(item["timestamp"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    def from_api(cls, item: dict, host: str) -> Edit:
+        ts = datetime.strptime(item['timestamp'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=UTC)
         return cls(
             host=host,
-            username=item["user"],
-            revid=int(item["revid"]),
-            parentid=int(item.get("parentid") or 0),
-            title=item["title"],
+            username=item['user'],
+            revid=int(item['revid']),
+            parentid=int(item.get('parentid') or 0),
+            title=item['title'],
             timestamp=ts,
-            comment=item.get("comment") or "",
-            sizediff=int(item.get("sizediff") or 0),
-            is_new=bool(item.get("new", False)),
-            is_minor=bool(item.get("minor", False)),
-            is_top=bool(item.get("top", False)),
+            comment=item.get('comment') or '',
+            sizediff=int(item.get('sizediff') or 0),
+            is_new=bool(item.get('new', False)),
+            is_minor=bool(item.get('minor', False)),
+            is_top=bool(item.get('top', False)),
         )
 
     @property
     def lang(self) -> str:
         """Short wiki label from the host, e.g. 'en', 'ru', 'be-tarask', 'commons'."""
-        return self.host.split(".")[0]
+        return self.host.split('.')[0]
 
     # --- URL builders -----------------------------------------------------
     def _wiki(self, title: str) -> str:
-        return f"https://{self.host}/wiki/" + quote(title.replace(" ", "_"), safe="/:()_,'!.&%-+")
+        return f'https://{self.host}/wiki/' + quote(title.replace(' ', '_'), safe="/:()_,'!.&%-+")
 
     @property
     def page_url(self) -> str:
@@ -59,20 +59,20 @@ class Edit:
 
     @property
     def diff_url(self) -> str:
-        query = {"title": self.title, "diff": self.revid, "oldid": self.parentid or self.revid}
-        return f"https://{self.host}/w/index.php?" + urlencode(query)
+        query = {'title': self.title, 'diff': self.revid, 'oldid': self.parentid or self.revid}
+        return f'https://{self.host}/w/index.php?' + urlencode(query)
 
     @property
     def permalink(self) -> str:
-        return f"https://{self.host}/w/index.php?" + urlencode({"title": self.title, "oldid": self.revid})
+        return f'https://{self.host}/w/index.php?' + urlencode({'title': self.title, 'oldid': self.revid})
 
     @property
     def user_contribs_url(self) -> str:
-        return self._wiki("Special:Contributions/" + self.username)
+        return self._wiki('Special:Contributions/' + self.username)
 
     @property
     def user_url(self) -> str:
-        return self._wiki("User:" + self.username)
+        return self._wiki('User:' + self.username)
 
 
 @dataclass(frozen=True)

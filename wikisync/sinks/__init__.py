@@ -24,10 +24,10 @@ def build_sinks(targets: list[str], env, dedup: bool) -> list[Sink]:
     for name in targets:
         builder = _BUILDERS.get(name)
         if builder is None:
-            known = ", ".join(sorted(_BUILDERS))
-            raise SystemExit(f"Unknown export target {name!r}. Known targets: {known}.")
+            known = ', '.join(sorted(_BUILDERS))
+            raise SystemExit(f'Unknown export target {name!r}. Known targets: {known}.')
         sinks.append(builder(env, dedup))
     return sinks
 
 
-__all__ = ["Sink", "build_sinks"]
+__all__ = ['Sink', 'build_sinks']
