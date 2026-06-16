@@ -40,11 +40,8 @@ def run(config: Config, env) -> int:
     return 1 if total_failures else 0
 
 
-def _sync_host(config: Config, host: str, sinks: list[Sink], state: dict) -> tuple[int, int]:
-    """Sync a single wiki. Returns (created, failures)."""
-    wiki = Wikipedia(host, config.user_agent)
-    last_revid, last_ts = state_mod.get(state, host, config.username)
-
+def _collect_batch(wiki: Wikipedia, config: Config, host: str, last_revid: int | None) -> list:
+    """Fetch new edits for one wiki, oldest-first, capped to this run's batch size."""
     cutoff = None
     if last_revid is None:
         cutoff = datetime.now(UTC) - timedelta(days=config.first_run_lookback_days)
@@ -52,15 +49,37 @@ def _sync_host(config: Config, host: str, sinks: list[Sink], state: dict) -> tup
 
     candidates = list(wiki.iter_contributions(config.username, since_revid=last_revid, cutoff=cutoff))
     candidates.sort(key=lambda e: (e.timestamp, e.revid))  # oldest first → monotonic high-water
-
     batch = candidates[: config.max_edits]
+
     if not candidates:
         log.info('[%s] no new edits.', host)
-        return 0, 0
-    if len(candidates) > len(batch):
+    elif len(candidates) > len(batch):
         log.info('[%s] %d new edits; processing oldest %d this run (rest next run).', host, len(candidates), len(batch))
     else:
         log.info('[%s] %d new edit(s) to process.', host, len(candidates))
+    return batch
+
+
+def _export_edit(edit, diff, sinks: list[Sink], title: str, host: str) -> int:
+    """Export one edit to every sink (skipping those that already have it). Returns notes created."""
+    created = 0
+    for sink in sinks:
+        if sink.exists(edit):
+            log.info('[%s] skip (already in %s): %s', host, sink.name, title)
+            continue
+        sink.export(edit, diff, title)
+        created += 1
+        log.info('[%s] created in %s: %s', host, sink.name, title)
+    return created
+
+
+def _sync_host(config: Config, host: str, sinks: list[Sink], state: dict) -> tuple[int, int]:
+    """Sync a single wiki. Returns (created, failures)."""
+    wiki = Wikipedia(host, config.user_agent)
+    last_revid, last_ts = state_mod.get(state, host, config.username)
+    batch = _collect_batch(wiki, config, host, last_revid)
+    if not batch:
+        return 0, 0
 
     new_revid = last_revid or 0
     new_ts = last_ts
@@ -71,20 +90,14 @@ def _sync_host(config: Config, host: str, sinks: list[Sink], state: dict) -> tup
         title = render.format_title(edit, config.note_title_template)
         try:
             diff = wiki.fetch_diff(edit)
-            for sink in sinks:
-                if sink.exists(edit):
-                    log.info('[%s] skip (already in %s): %s', host, sink.name, title)
-                    continue
-                sink.export(edit, diff, title)
-                created += 1
-                log.info('[%s] created in %s: %s', host, sink.name, title)
+            created += _export_edit(edit, diff, sinks, title, host)
             if not blocked:
                 new_revid = edit.revid
                 new_ts = edit.timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
-        except Exception as exc:
+        except Exception:
             failures += 1
             blocked = True
-            log.error('[%s] FAILED edit revid=%s (%s): %s', host, edit.revid, edit.title, exc)
+            log.exception('[%s] FAILED edit revid=%s (%s)', host, edit.revid, edit.title)
 
     if new_revid and new_revid != (last_revid or 0):
         state_mod.update(state, host, config.username, new_revid, new_ts)

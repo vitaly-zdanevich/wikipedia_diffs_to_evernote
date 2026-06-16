@@ -42,6 +42,14 @@ def _attr(value: str) -> str:
     return quoteattr(value or '')
 
 
+def _size_color(sizediff: int) -> str:
+    if sizediff > 0:
+        return '#187a18'
+    if sizediff < 0:
+        return '#a11111'
+    return '#555555'
+
+
 class EvernoteSink(Sink):
     name = 'evernote'
 
@@ -129,7 +137,7 @@ class EvernoteSink(Sink):
 
     # --- ENML construction ------------------------------------------------
     def _build_enml(self, edit: Edit, diff: DiffContent) -> str:
-        sign_color = '#187a18' if edit.sizediff > 0 else ('#a11111' if edit.sizediff < 0 else '#555555')
+        sign_color = _size_color(edit.sizediff)
         flags = []
         if edit.is_new:
             flags.append('new page')
@@ -137,15 +145,18 @@ class EvernoteSink(Sink):
             flags.append('minor')
         flag_text = f' · {", ".join(flags)}' if flags else ''
 
-        parts = [
-            f'<div style="font-size:15px;margin-bottom:6px;">'
-            f'<b><a href={_attr(edit.page_url)}>{_esc(edit.title)}</a></b></div>',
+        header = (
+            '<div style="font-size:15px;margin-bottom:6px;">'
+            + f'<b><a href={_attr(edit.page_url)}>{_esc(edit.title)}</a></b></div>'
+        )
+        meta = (
             '<div style="margin-bottom:4px;">'
-            f'Editor: <a href={_attr(edit.user_contribs_url)}>{_esc(edit.username)}</a> · '
-            f'{_esc(edit.timestamp.strftime("%Y-%m-%d %H:%M UTC"))} · '
-            f'<span style="color:{sign_color};font-weight:bold;">{edit.sizediff:+d} bytes</span>'
-            f'{_esc(flag_text)}</div>',
-        ]
+            + f'Editor: <a href={_attr(edit.user_contribs_url)}>{_esc(edit.username)}</a> · '
+            + f'{_esc(edit.timestamp.strftime("%Y-%m-%d %H:%M UTC"))} · '
+            + f'<span style="color:{sign_color};font-weight:bold;">{edit.sizediff:+d} bytes</span>'
+            + f'{_esc(flag_text)}</div>'
+        )
+        parts = [header, meta]
         if edit.comment:
             parts.append(f'<div style="margin-bottom:4px;color:#444444;">Summary: <i>{_esc(edit.comment)}</i></div>')
         parts.append(

@@ -20,6 +20,13 @@ _HARD_CAP = 5000
 _PAGE_SIZE = 500
 
 
+def _past_boundary(edit: Edit, since_revid: int | None, cutoff: datetime | None) -> bool:
+    """True once a newest-first scan has passed the caller's stop conditions."""
+    if since_revid is not None and edit.revid <= since_revid:
+        return True
+    return cutoff is not None and edit.timestamp < cutoff
+
+
 class Wikipedia:
     def __init__(self, host: str, user_agent: str, session: requests.Session | None = None, timeout: int = 30):
         self.host = host
@@ -48,6 +55,14 @@ class Wikipedia:
         Stops at (and excludes) ``since_revid``, or once edits are older than
         ``cutoff``, or after the hard cap. The caller decides ordering/batching.
         """
+        for item in self._iter_raw_contributions(username):
+            edit = Edit.from_api(item, self.host)
+            if _past_boundary(edit, since_revid, cutoff):
+                return
+            yield edit
+
+    def _iter_raw_contributions(self, username: str) -> Iterator[dict]:
+        """Page through raw usercontribs items, newest-first, bounded by the hard cap."""
         params = {
             'action': 'query',
             'list': 'usercontribs',
@@ -63,12 +78,7 @@ class Wikipedia:
                 page_params['uccontinue'] = uccontinue
             data = self._get(page_params)
             for item in data.get('query', {}).get('usercontribs', []):
-                edit = Edit.from_api(item, self.host)
-                if since_revid is not None and edit.revid <= since_revid:
-                    return
-                if cutoff is not None and edit.timestamp < cutoff:
-                    return
-                yield edit
+                yield item
                 seen += 1
                 if seen >= _HARD_CAP:
                     log.warning('Hit hard cap of %d contributions; stopping pagination.', _HARD_CAP)

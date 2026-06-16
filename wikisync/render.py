@@ -49,6 +49,30 @@ def _classes(el) -> list[str]:
     return (el.get('class') or '').split()
 
 
+def _style_element(el) -> None:
+    """Apply the inline style for one diff element, based on its MediaWiki class."""
+    classes = _classes(el)
+    tag = el.tag.lower()
+    if tag == 'td':
+        # Preserve the +/- marker glyph that CSS would otherwise add.
+        if 'diff-marker' in classes and el.get('data-marker'):
+            el.text = el.get('data-marker')
+        for key in _TD_PRIORITY:
+            if key in classes:
+                el.set('style', _TD_STYLES[key])
+                break
+    elif tag == 'div':
+        el.set('style', _DIV_STYLE)
+    elif tag in _INLINE_STYLES:
+        el.set('style', _INLINE_STYLES[tag])
+
+
+def _strip_foreign_attrs(el) -> None:
+    """Remove every attribute ENML won't keep (class, data-*, ...)."""
+    for attr in [a for a in el.attrib if a not in _KEEP_ATTRS]:
+        del el.attrib[attr]
+
+
 def diff_rows_to_xhtml(rows_html: str) -> str:
     """Convert a MediaWiki ``compare`` body into inline-styled, well-formed XHTML.
 
@@ -58,28 +82,9 @@ def diff_rows_to_xhtml(rows_html: str) -> str:
     """
     root = lhtml.fragment_fromstring(f'<table>{rows_html}</table>')
     for el in root.iter():
-        if not isinstance(el.tag, str):  # comments / processing instructions
-            continue
-        classes = _classes(el)
-        tag = el.tag.lower()
-
-        if tag == 'td':
-            # Preserve the +/- marker glyph that CSS would otherwise add.
-            if 'diff-marker' in classes and el.get('data-marker'):
-                el.text = el.get('data-marker')
-            for key in _TD_PRIORITY:
-                if key in classes:
-                    el.set('style', _TD_STYLES[key])
-                    break
-        elif tag == 'div':
-            el.set('style', _DIV_STYLE)
-        elif tag in _INLINE_STYLES:
-            el.set('style', _INLINE_STYLES[tag])
-
-        for attr in list(el.attrib):
-            if attr not in _KEEP_ATTRS:
-                del el.attrib[attr]
-
+        if isinstance(el.tag, str):  # skip comments / processing instructions
+            _style_element(el)
+            _strip_foreign_attrs(el)
     root.set('style', _TABLE_STYLE)
     return etree.tostring(root, method='xml', encoding='unicode')
 
