@@ -48,6 +48,9 @@ MediaWiki API ──> Edit objects ──> render ──> Sink.export()  (Everno
 1. **Fork / create** this repo on GitHub.
 2. **Settings → Secrets and variables → Actions**:
    - **Secrets**: `EVERNOTE_DEV_TOKEN` (and `NOTION_TOKEN` if using Notion).
+     Also set `WIKIPEDIA_USER_AGENT` here as a **Secret** if you include a contact
+     email and the repo is public — the workflow reads the secret first, then the
+     variable. A descriptive UA reduces 429 rate-limiting.
    - **Variables**: `WIKIPEDIA_USERNAME` (required). Optionally `WIKIPEDIA_LANG`,
      `EVERNOTE_NOTEBOOK`, `EXPORT_TARGETS`, `MAX_EDITS_PER_RUN`, etc. — see
      [`.env.example`](.env.example) for the full list.

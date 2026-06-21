@@ -36,7 +36,9 @@ jobs:
           MAX_EDITS_PER_RUN: ${{ vars.MAX_EDITS_PER_RUN }}
           FIRST_RUN_LOOKBACK_DAYS: ${{ vars.FIRST_RUN_LOOKBACK_DAYS }}
           NOTE_TITLE_TEMPLATE: ${{ vars.NOTE_TITLE_TEMPLATE }}
-          WIKIPEDIA_USER_AGENT: ${{ vars.WIKIPEDIA_USER_AGENT }}
+          # Prefer a Secret (keeps a contact email out of the public repo); fall
+          # back to a Variable for those who don't mind it being visible.
+          WIKIPEDIA_USER_AGENT: ${{ secrets.WIKIPEDIA_USER_AGENT || vars.WIKIPEDIA_USER_AGENT }}
           LOG_LEVEL: ${{ vars.LOG_LEVEL }}
           # --- Evernote (token is a Secret; the rest are Variables) ---
           EVERNOTE_DEV_TOKEN: ${{ secrets.EVERNOTE_DEV_TOKEN }}
