@@ -105,3 +105,11 @@ def test_fetch_diff_unavailable_on_network_error():
 
     w = Wikipedia('h', 'ua', session=Boom([]))
     assert w.fetch_diff(make_edit()).kind == 'unavailable'
+
+
+def test_default_session_has_retry_adapter():
+    # No session injected → real Session with a retry adapter mounted (no network).
+    w = Wikipedia('en.wikipedia.org', 'ua/1.0')
+    adapter = w.session.get_adapter('https://en.wikipedia.org/w/api.php')
+    assert adapter.max_retries.total == 5
+    assert 429 in adapter.max_retries.status_forcelist

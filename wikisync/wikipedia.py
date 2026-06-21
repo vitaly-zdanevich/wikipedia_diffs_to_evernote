@@ -10,6 +10,8 @@ from collections.abc import Iterator
 from datetime import datetime
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from .models import DiffContent, Edit
 
@@ -18,6 +20,17 @@ log = logging.getLogger(__name__)
 # Safety valve: never page through more than this many contributions in one run.
 _HARD_CAP = 5000
 _PAGE_SIZE = 500
+
+# Retry transient failures (429 rate-limit, 5xx) with exponential backoff,
+# honouring any Retry-After header. GitHub-hosted runners share IPs that the
+# Wikimedia API rate-limits, so this is essential for unattended runs.
+_RETRY = Retry(
+    total=5,
+    backoff_factor=2.0,
+    status_forcelist=(429, 500, 502, 503, 504),
+    allowed_methods=frozenset({'GET'}),
+    respect_retry_after_header=True,
+)
 
 
 def _past_boundary(edit: Edit, since_revid: int | None, cutoff: datetime | None) -> bool:
@@ -32,8 +45,11 @@ class Wikipedia:
         self.host = host
         self.api_url = f'https://{host}/w/api.php'
         self.timeout = timeout
-        self.session = session or requests.Session()
-        self.session.headers.update({'User-Agent': user_agent})
+        if session is None:
+            session = requests.Session()
+            session.mount('https://', HTTPAdapter(max_retries=_RETRY))
+        session.headers.update({'User-Agent': user_agent})
+        self.session = session
 
     def _get(self, params: dict) -> dict:
         params = {**params, 'format': 'json', 'formatversion': '2'}

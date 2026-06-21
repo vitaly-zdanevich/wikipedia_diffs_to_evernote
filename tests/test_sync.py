@@ -130,3 +130,21 @@ def test_run_multi_host_independent_state(tmp_path, monkeypatch):
     assert state.get(st, 'en.wikipedia.org', 'Tester')[0] == 10
     assert state.get(st, 'ru.wikipedia.org', 'Tester')[0] == 20
     assert len(sink.exported) == 2
+
+
+def test_run_continues_when_one_host_fails(tmp_path, monkeypatch):
+    sink = RecordingSink()
+
+    class FailingWiki(FakeWiki):
+        def iter_contributions(self, username, since_revid=None, cutoff=None):
+            if self.host == 'en.wikipedia.org':
+                raise RuntimeError('429 boom')
+            return list(FakeWiki.edits_by_host.get(self.host, []))
+
+    FakeWiki.edits_by_host = {'ru.wikipedia.org': [make_edit(revid=20, host='ru.wikipedia.org')]}
+    monkeypatch.setattr(sync, 'Wikipedia', FailingWiki)
+    monkeypatch.setattr(sync, 'build_sinks', lambda targets, env, dedup: [sink])
+    cfg = _cfg(tmp_path, hosts=('en.wikipedia.org', 'ru.wikipedia.org'))
+
+    assert sync.run(cfg, {}) == 1  # en failed, but did not abort the run
+    assert [r for r, _ in sink.exported] == [20]  # ru still synced

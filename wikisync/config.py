@@ -25,8 +25,9 @@ def _int(value: str | None, default: int) -> int:
 
 
 # Default User-Agent. The Wikimedia API policy asks for a descriptive UA with a
-# contact; override via WIKIPEDIA_USER_AGENT to point at your own repo/email.
-_DEFAULT_UA = 'wikisync/1.0 (https://github.com/; diffs_to_evernote) python-requests'
+# contact — strongly recommended to avoid 429s from shared CI IPs. Override via
+# WIKIPEDIA_USER_AGENT to add your own email, e.g. "... (you@example.com)".
+_DEFAULT_UA = 'wikipedia-diffs-to-evernote/1.0 (+https://github.com/vitaly-zdanevich/wikipedia_diffs_to_evernote)'
 
 # Default note title, formatted with .format(title=, date=, sizediff=, revid=, user=, host=, lang=).
 # The [lang] prefix distinguishes wikis when syncing several at once.

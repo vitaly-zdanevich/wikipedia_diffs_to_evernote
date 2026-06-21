@@ -32,7 +32,14 @@ def run(config: Config, env) -> int:
     state = state_mod.load(config.state_file)
     total_created = total_failures = 0
     for host in config.hosts:
-        created, failures = _sync_host(config, host, sinks, state)
+        try:
+            created, failures = _sync_host(config, host, sinks, state)
+        except Exception:
+            # An unrecoverable error on one wiki (e.g. a persistent 429) must not
+            # block the others; log it and carry on.
+            log.exception('[%s] sync failed; continuing with remaining wikis', host)
+            total_failures += 1
+            continue
         total_created += created
         total_failures += failures
 
