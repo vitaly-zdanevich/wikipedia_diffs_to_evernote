@@ -59,8 +59,8 @@ class Edit:
 
     @property
     def diff_url(self) -> str:
-        query = {'title': self.title, 'diff': self.revid, 'oldid': self.parentid or self.revid}
-        return f'https://{self.host}/w/index.php?' + urlencode(query)
+        title = self.title.replace(' ', '_')
+        return f'https://{self.host}/w/index.php?title={title}&diff={self.revid}&oldid={self.parentid or self.revid}'
 
     @property
     def permalink(self) -> str:

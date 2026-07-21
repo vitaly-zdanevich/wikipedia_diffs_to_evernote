@@ -65,6 +65,23 @@ def test_export_creates_note():
     ET.fromstring(note.content.encode('utf-8'))
 
 
+def test_export_preserves_unencoded_unicode_diff_url():
+    sink = _sink()
+    sink._note_store = FakeNoteStore()
+    edit = make_edit(
+        host='ru.wikipedia.org',
+        title='Пенья, Хосе Луис Хордан',
+        revid=154036623,
+        parentid=153423849,
+    )
+    sink.export(edit, DiffContent('unavailable'), 'My Title')
+
+    note = sink._note_store.created[0][1]
+    assert note.attributes.sourceURL == edit.diff_url
+    root = ET.fromstring(note.content.encode('utf-8'))
+    assert edit.diff_url in [link.get('href') for link in root.iter('a')]
+
+
 def test_exists_dedup():
     sink = _sink(dedup=True)
     sink._note_store = FakeNoteStore(total_notes=1)

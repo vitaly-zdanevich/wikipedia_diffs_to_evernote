@@ -18,6 +18,18 @@ def test_model_urls_and_lang():
     assert edit.user_contribs_url.endswith('/wiki/Special:Contributions/Tester')
 
 
+def test_diff_url_does_not_percent_encode_title():
+    edit = make_edit(
+        host='ru.wikipedia.org',
+        title='Пенья, Хосе Луис Хордан',
+        revid=154036623,
+        parentid=153423849,
+    )
+    assert edit.diff_url == (
+        'https://ru.wikipedia.org/w/index.php?title=Пенья,_Хосе_Луис_Хордан&diff=154036623&oldid=153423849'
+    )
+
+
 def test_new_page_diff_url_uses_own_revid_as_oldid():
     edit = make_edit(revid=77, parentid=0, is_new=True)
     assert 'diff=77' in edit.diff_url and 'oldid=77' in edit.diff_url
