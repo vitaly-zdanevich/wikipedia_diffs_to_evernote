@@ -69,7 +69,7 @@ If your token is for Evernote China, also set `EVERNOTE_SERVICE_HOST=app.yinxian
 ## Local run / dry run
 
 ```bash
-python -m venv .venv && . .venv/bin/activate
+python3.14 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
 
 # No-credential dry run — prints what would be exported:
@@ -81,7 +81,7 @@ set -a; . ./.env; set +a
 python -m wikisync
 ```
 
-Run the tests with `pip install pytest && pytest`.
+Run the tests with `pip install -r requirements-dev.txt && pytest`.
 
 ## Configuration
 
@@ -165,10 +165,13 @@ the upload step (so CI stays green).
 ## Development
 
 ```bash
-pip install -r requirements.txt ruff pytest pytest-cov
+pip install -r requirements-dev.txt
 ruff check . && ruff format --check .   # lint + format (single-quote style; CI-enforced)
 pytest                                   # unit tests
 ```
+
+All runtime and development packages are pinned in `constraints.txt` for reproducible
+Python 3.14 installs. Update that lock deliberately and rerun the checks above.
 
 ## License
 
