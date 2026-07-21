@@ -45,7 +45,7 @@ def test_format_title_default_and_clamp():
 def test_format_title_bad_template_falls_back():
     # Unknown placeholder triggers the fallback path.
     title = render.format_title(make_edit(title='Foo'), '{nope}')
-    assert title.startswith('[en] Foo')
+    assert title == '[en] Foo (+42 B)'
 
 
 def test_diff_text_truncates():

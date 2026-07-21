@@ -31,7 +31,7 @@ _DEFAULT_UA = 'wikipedia-diffs-to-evernote/1.0 (+https://github.com/vitaly-zdane
 
 # Default note title, formatted with .format(title=, date=, sizediff=, revid=, user=, host=, lang=).
 # The [lang] prefix distinguishes wikis when syncing several at once.
-_DEFAULT_TITLE = '[{lang}] {title} — {date:%Y-%m-%d %H:%M} ({sizediff:+d} B)'
+_DEFAULT_TITLE = '[{lang}] {title} ({sizediff:+d} B)'
 
 
 @dataclass

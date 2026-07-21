@@ -17,7 +17,6 @@ each containing:
 
 - the **page title** (linked to the article),
 - a **clickable editor** name (→ their contributions page),
-- the **date**,
 - the **byte-size change** (`+/-` bytes, colour-coded),
 - a **link to the diff** on Wikipedia, and
 - the **diff itself**, rendered inline.
@@ -98,6 +97,7 @@ All configuration is via environment variables; the full annotated list is in
 | `EXPORT_DEDUP` | `true` | Skip edits already exported |
 | `MAX_EDITS_PER_RUN` | `50` | Cap per run; remainder syncs next run |
 | `FIRST_RUN_LOOKBACK_DAYS` | `7` | On first run, ignore edits older than this |
+| `NOTE_TITLE_TEMPLATE` | `[{lang}] {title} ({sizediff:+d} B)` | Python format template for exported note titles |
 | `EVERNOTE_DEV_TOKEN` | — | **Secret.** Required for the Evernote sink |
 | `EVERNOTE_NOTEBOOK` | (default notebook) | Notebook name (created if missing) |
 

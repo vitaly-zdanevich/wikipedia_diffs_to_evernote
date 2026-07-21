@@ -42,6 +42,7 @@ def test_build_enml_diff_is_wellformed_and_clean():
     assert '#d6f5d6' in enml and '#ffe0e0' in enml  # added/removed colours
     assert 'Special:Contributions/Tester' in enml  # clickable editor
     assert '&amp;' in enml and '&lt;y&gt;' in enml  # escaped summary
+    assert '2026-06-12' not in enml  # timestamp is intentionally omitted
 
 
 def test_build_enml_newpage_and_unavailable_wellformed():

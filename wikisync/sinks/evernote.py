@@ -152,7 +152,6 @@ class EvernoteSink(Sink):
         meta = (
             '<div style="margin-bottom:4px;">'
             + f'Editor: <a href={_attr(edit.user_contribs_url)}>{_esc(edit.username)}</a> · '
-            + f'{_esc(edit.timestamp.strftime("%Y-%m-%d %H:%M UTC"))} · '
             + f'<span style="color:{sign_color};font-weight:bold;">{edit.sizediff:+d} bytes</span>'
             + f'{_esc(flag_text)}</div>'
         )

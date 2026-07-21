@@ -136,6 +136,6 @@ def format_title(edit: Edit, template: str) -> str:
         )
     except Exception as exc:
         log.warning('Bad NOTE_TITLE_TEMPLATE (%s); using default.', exc)
-        title = f'[{edit.lang}] {edit.title} ({edit.timestamp:%Y-%m-%d})'
+        title = f'[{edit.lang}] {edit.title} ({edit.sizediff:+d} B)'
     title = _WS.sub(' ', title).strip()[:255]
     return title or 'Wikipedia edit'

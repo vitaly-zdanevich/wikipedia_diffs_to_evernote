@@ -18,6 +18,10 @@ def test_default_is_english():
     assert _cfg().hosts == ['en.wikipedia.org']
 
 
+def test_default_note_title_omits_date():
+    assert _cfg().note_title_template == '[{lang}] {title} ({sizediff:+d} B)'
+
+
 def test_comma_separated_langs_become_hosts():
     cfg = _cfg(WIKIPEDIA_LANG='en, ru ,be,be-tarask')
     assert cfg.hosts == [
