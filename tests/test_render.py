@@ -13,7 +13,11 @@ from wikisync.models import Edit
 def test_xhtml_is_well_formed_and_inline_styled():
     xhtml = render.diff_rows_to_xhtml(SAMPLE_ROWS)
     # Must parse as XML (ENML requires well-formed XML).
-    ET.fromstring(xhtml)
+    root = ET.fromstring(xhtml)
+    assert root.tag == 'div'
+    assert root.findall('.//table') == []
+    assert root.findall('.//tr') == []
+    assert root.findall('.//td') == []
     # ENML keeps style, not class/data-*.
     assert 'class=' not in xhtml
     assert 'data-marker' not in xhtml
@@ -23,6 +27,11 @@ def test_xhtml_is_well_formed_and_inline_styled():
     assert '#ffe0e0' in xhtml  # deleted line background
     # The +/- marker glyphs survive as text.
     assert '−' in xhtml and '+' in xhtml
+    # Left/right duplicates collapse into one ordered unified sequence.
+    lines = [''.join(line.itertext()) for line in root]
+    assert lines == ['@@ Line 1: @@', '−foo old', '+foo new', ' unchanged']
+    assert root.find('.//del').get('style') == 'background:#ffacac;text-decoration:none;'
+    assert root.find('.//ins').get('style') == 'background:#8ef58e;text-decoration:none;'
 
 
 def test_text_diff_has_unified_markers():

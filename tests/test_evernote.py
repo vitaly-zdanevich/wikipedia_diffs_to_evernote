@@ -52,7 +52,9 @@ def test_build_enml_diff_is_wellformed_and_clean():
     assert 'Special:Contributions/Tester' in enml  # clickable editor
     assert '&amp;' in enml and '&lt;y&gt;' in enml  # escaped summary
     assert '2026-06-12' not in enml  # timestamp is intentionally omitted
-    assert '<hr' not in enml  # no divider before the diff table
+    assert '<hr' not in enml  # no divider before the inline diff
+    assert '<table' not in enml and '<tr' not in enml and '<td' not in enml
+    assert enml.count('unchanged') == 1  # duplicated left/right context is collapsed
 
 
 def test_build_enml_newpage_and_unavailable_wellformed():
