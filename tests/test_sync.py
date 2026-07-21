@@ -104,23 +104,37 @@ def test_run_failure_blocks_highwater(tmp_path, monkeypatch):
     assert state.get(state.load(cfg.state_file), 'en.wikipedia.org', 'Tester')[0] == 10
 
 
-def test_run_diff_fetch_failure_holds_highwater_for_retry(tmp_path, monkeypatch):
+def test_run_diff_fetch_failure_retries_next_run_without_duplicates(tmp_path, monkeypatch):
     sink = RecordingSink()
 
-    class DiffFailingWiki(FakeWiki):
+    class DiffFailingOnceWiki(FakeWiki):
+        failures_left = 1
+        attempts = []
+
+        def iter_contributions(self, username, since_revid=None, cutoff=None):
+            edits = super().iter_contributions(username, since_revid, cutoff)
+            return [edit for edit in edits if since_revid is None or edit.revid > since_revid]
+
         def fetch_diff(self, edit):
-            if edit.revid == 11:
+            type(self).attempts.append(edit.revid)
+            if edit.revid == 11 and type(self).failures_left:
+                type(self).failures_left -= 1
                 raise requests.ConnectionError('transient failure')
             return super().fetch_diff(edit)
 
     FakeWiki.edits_by_host = {'en.wikipedia.org': [make_edit(revid=10, parentid=9), make_edit(revid=11, parentid=10)]}
-    monkeypatch.setattr(sync, 'Wikipedia', DiffFailingWiki)
+    monkeypatch.setattr(sync, 'Wikipedia', DiffFailingOnceWiki)
     monkeypatch.setattr(sync, 'build_sinks', lambda targets, env, dedup: [sink])
     cfg = _cfg(tmp_path)
 
     assert sync.run(cfg, {}) == 1
     assert [revid for revid, _ in sink.exported] == [10]
     assert state.get(state.load(cfg.state_file), 'en.wikipedia.org', 'Tester')[0] == 10
+
+    assert sync.run(cfg, {}) == 0
+    assert DiffFailingOnceWiki.attempts == [10, 11, 11]
+    assert [revid for revid, _ in sink.exported] == [10, 11]
+    assert state.get(state.load(cfg.state_file), 'en.wikipedia.org', 'Tester')[0] == 11
 
 
 def test_run_caps_batch_to_max_edits(tmp_path, monkeypatch):
