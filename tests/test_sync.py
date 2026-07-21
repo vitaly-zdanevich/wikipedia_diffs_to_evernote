@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import requests
+
 from tests.support import make_edit
 from wikisync import state, sync
 from wikisync.config import Config
@@ -99,6 +101,25 @@ def test_run_failure_blocks_highwater(tmp_path, monkeypatch):
     assert sync.run(cfg, {}) == 1
     # 10 succeeded, 11 failed (blocks), 12 still attempted
     assert 10 in [r for r, _ in sink.exported]
+    assert state.get(state.load(cfg.state_file), 'en.wikipedia.org', 'Tester')[0] == 10
+
+
+def test_run_diff_fetch_failure_holds_highwater_for_retry(tmp_path, monkeypatch):
+    sink = RecordingSink()
+
+    class DiffFailingWiki(FakeWiki):
+        def fetch_diff(self, edit):
+            if edit.revid == 11:
+                raise requests.ConnectionError('transient failure')
+            return super().fetch_diff(edit)
+
+    FakeWiki.edits_by_host = {'en.wikipedia.org': [make_edit(revid=10, parentid=9), make_edit(revid=11, parentid=10)]}
+    monkeypatch.setattr(sync, 'Wikipedia', DiffFailingWiki)
+    monkeypatch.setattr(sync, 'build_sinks', lambda targets, env, dedup: [sink])
+    cfg = _cfg(tmp_path)
+
+    assert sync.run(cfg, {}) == 1
+    assert [revid for revid, _ in sink.exported] == [10]
     assert state.get(state.load(cfg.state_file), 'en.wikipedia.org', 'Tester')[0] == 10
 
 

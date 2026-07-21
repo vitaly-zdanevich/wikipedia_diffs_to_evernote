@@ -98,13 +98,14 @@ def test_fetch_diff_new_page():
     assert diff.kind == 'newpage' and 'Heading' in diff.html
 
 
-def test_fetch_diff_unavailable_on_network_error():
+def test_fetch_diff_propagates_network_error_for_retry():
     class Boom(FakeSession):
         def get(self, *a, **k):
             raise requests.ConnectionError('boom')
 
     w = Wikipedia('h', 'ua', session=Boom([]))
-    assert w.fetch_diff(make_edit()).kind == 'unavailable'
+    with pytest.raises(requests.ConnectionError, match='boom'):
+        w.fetch_diff(make_edit())
 
 
 def test_default_session_has_retry_adapter():

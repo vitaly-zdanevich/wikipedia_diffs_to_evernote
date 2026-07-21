@@ -105,30 +105,26 @@ class Wikipedia:
                 return
 
     def fetch_diff(self, edit: Edit) -> DiffContent:
-        """Fetch the change for an edit. Never raises — degrades to 'unavailable'."""
-        try:
-            if edit.parentid and not edit.is_new:
-                data = self._get(
-                    {
-                        'action': 'compare',
-                        'fromrev': edit.parentid,
-                        'torev': edit.revid,
-                        'prop': 'diff',
-                    }
-                )
-                body = data.get('compare', {}).get('body')
-                return DiffContent('diff', body) if body else DiffContent('unavailable')
-
-            # New page (no parent revision): show the created wikitext as added content.
+        """Fetch the change for an edit, propagating request and API failures."""
+        if edit.parentid and not edit.is_new:
             data = self._get(
                 {
-                    'action': 'parse',
-                    'oldid': edit.revid,
-                    'prop': 'wikitext',
+                    'action': 'compare',
+                    'fromrev': edit.parentid,
+                    'torev': edit.revid,
+                    'prop': 'diff',
                 }
             )
-            wikitext = data.get('parse', {}).get('wikitext')
-            return DiffContent('newpage', wikitext) if wikitext else DiffContent('unavailable')
-        except Exception as exc:  # network / API hiccup must not abort the run
-            log.warning('Could not fetch diff for revid %s (%s): %s', edit.revid, edit.title, exc)
-            return DiffContent('unavailable')
+            body = data.get('compare', {}).get('body')
+            return DiffContent('diff', body) if body else DiffContent('unavailable')
+
+        # New page (no parent revision): show the created wikitext as added content.
+        data = self._get(
+            {
+                'action': 'parse',
+                'oldid': edit.revid,
+                'prop': 'wikitext',
+            }
+        )
+        wikitext = data.get('parse', {}).get('wikitext')
+        return DiffContent('newpage', wikitext) if wikitext else DiffContent('unavailable')

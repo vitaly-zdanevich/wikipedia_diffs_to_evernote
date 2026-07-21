@@ -82,7 +82,7 @@ class DiffContent:
     ``kind`` is one of:
       - ``"diff"``      : ``html`` is MediaWiki ``compare`` body (a run of <tr> rows).
       - ``"newpage"``   : ``html`` is the new page's wikitext (the whole thing is "added").
-      - ``"unavailable"``: could not be fetched; sinks should fall back to the diff link.
+      - ``"unavailable"``: API returned no content; sinks should fall back to the diff link.
     """
 
     kind: str
