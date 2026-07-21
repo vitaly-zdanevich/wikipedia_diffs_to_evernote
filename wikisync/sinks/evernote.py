@@ -161,7 +161,6 @@ class EvernoteSink(Sink):
         parts.append(
             f'<div style="margin-bottom:8px;"><a href={_attr(edit.diff_url)}>View diff on Wikipedia →</a></div>'
         )
-        parts.append('<hr/>')
         parts.append(self._render_diff(diff))
         return _ENML_HEADER + '<en-note>' + ''.join(parts) + '</en-note>'
 
