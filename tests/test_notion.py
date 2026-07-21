@@ -25,7 +25,11 @@ def test_from_env_requires_both():
 
 
 def test_exists_true_false_and_error():
-    assert _sink([FakeResp({'results': [{'id': 'x'}]})]).exists(make_edit()) is True
+    edit = make_edit(title='AT&T')
+    found = _sink([FakeResp({'results': [{'id': 'x'}]})])
+    assert found.exists(edit) is True
+    filters = found.session.calls[0][2]['filter']['or']
+    assert [item['url']['equals'] for item in filters] == list(edit.dedup_urls)
     assert _sink([FakeResp({'results': []})]).exists(make_edit()) is False
     assert _sink([FakeResp({}, status_code=400, text='bad')]).exists(make_edit()) is False
 
@@ -45,6 +49,18 @@ def test_export_posts_page():
     assert payload['properties']['Name']['title'][0]['text']['content'] == 'Title'
     assert payload['properties']['Diff URL']['url'].startswith('https://')
     assert payload['children']  # at least the link block + code block(s)
+
+
+def test_export_new_page_links_created_revision():
+    sink = _sink([FakeResp({'id': 'page1'}, status_code=200)])
+    edit = make_edit(revid=77, parentid=0, is_new=True)
+    sink.export(edit, DiffContent('newpage', 'created'), 'Title')
+
+    link = sink.session.calls[-1][2]['children'][0]['paragraph']['rich_text'][0]['text']
+    assert link == {
+        'content': 'View revision on Wikipedia',
+        'link': {'url': 'https://en.wikipedia.org/w/index.php?oldid=77'},
+    }
 
 
 def test_export_raises_on_api_error():

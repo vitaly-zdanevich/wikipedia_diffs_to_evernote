@@ -60,7 +60,9 @@ def test_build_enml_diff_is_wellformed_and_clean():
 def test_build_enml_newpage_and_unavailable_wellformed():
     sink = _sink()
     edit = make_edit(is_new=True, parentid=0)
-    _assert_repo_footer(sink._build_enml(edit, DiffContent('newpage', '== H == <b> & x')))
+    enml = sink._build_enml(edit, DiffContent('newpage', '== H == <b> & x'))
+    _assert_repo_footer(enml)
+    assert 'View revision on Wikipedia' in enml
     _assert_repo_footer(sink._build_enml(edit, DiffContent('unavailable')))
 
 
@@ -78,7 +80,7 @@ def test_export_creates_note():
     ET.fromstring(note.content.encode('utf-8'))
 
 
-def test_export_preserves_unencoded_unicode_diff_url():
+def test_export_uses_revision_only_diff_url_for_unicode_title():
     sink = _sink()
     sink._note_store = FakeNoteStore()
     edit = make_edit(
@@ -90,6 +92,7 @@ def test_export_preserves_unencoded_unicode_diff_url():
     sink.export(edit, DiffContent('unavailable'), 'My Title')
 
     note = sink._note_store.created[0][1]
+    assert edit.diff_url == 'https://ru.wikipedia.org/w/index.php?diff=154036623&oldid=153423849'
     assert note.attributes.sourceURL == edit.diff_url
     root = ET.fromstring(note.content.encode('utf-8'))
     assert edit.diff_url in [link.get('href') for link in root.iter('a')]
@@ -98,9 +101,13 @@ def test_export_preserves_unencoded_unicode_diff_url():
 def test_exists_dedup():
     sink = _sink(dedup=True)
     sink._note_store = FakeNoteStore(total_notes=1)
-    assert sink.exists(make_edit()) is True
+    edit = make_edit(title='C++ & "More"')
+    assert sink.exists(edit) is True
+    query = sink._note_store.find_queries[0]
+    assert query.startswith('any: ')
+    assert all(url.replace('"', '\\"') in query for url in edit.dedup_urls)
     sink._note_store = FakeNoteStore(total_notes=0)
-    assert sink.exists(make_edit()) is False
+    assert sink.exists(edit) is False
 
 
 def test_exists_disabled_short_circuits():

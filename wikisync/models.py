@@ -59,8 +59,24 @@ class Edit:
 
     @property
     def diff_url(self) -> str:
-        title = self.title.replace(' ', '_')
-        return f'https://{self.host}/w/index.php?title={title}&diff={self.revid}&oldid={self.parentid or self.revid}'
+        # Revision IDs identify the diff without a title, so the URL stays valid
+        # for reserved title characters and stable when a page is renamed.
+        if not self.parentid:
+            # MediaWiki renders a first revision as an empty diff; link the
+            # created revision itself instead.
+            return f'https://{self.host}/w/index.php?oldid={self.revid}'
+        return f'https://{self.host}/w/index.php?diff={self.revid}&oldid={self.parentid}'
+
+    @property
+    def dedup_urls(self) -> tuple[str, ...]:
+        """Current source URL plus historical formats, used only for lookup."""
+        oldid = self.parentid or self.revid
+        raw_title = self.title.replace(' ', '_')
+        raw = f'https://{self.host}/w/index.php?title={raw_title}&diff={self.revid}&oldid={oldid}'
+        encoded = f'https://{self.host}/w/index.php?' + urlencode(
+            {'title': self.title, 'diff': self.revid, 'oldid': oldid}
+        )
+        return tuple(dict.fromkeys((self.diff_url, raw, encoded)))
 
     @property
     def permalink(self) -> str:

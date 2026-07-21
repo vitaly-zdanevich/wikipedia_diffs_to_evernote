@@ -42,7 +42,8 @@ MediaWiki API ──> Edit objects ──> render ──> Sink.export()  (Everno
   no interactive OAuth runs during synchronization.
 - **Idempotent.** A committed `state.json` records the last-synced revision per
   `host|username`, so each run only adds new edits. As a safety net, dedup-capable
-  sinks also skip existing edits; Evernote searches by the note's `sourceURL`.
+  sinks also skip an already-exported revision; Evernote searches by the note's
+  `sourceURL`. Separate edits to the same article still create separate notes.
 - **Retry-safe.** MediaWiki requests retry transient rate-limit and server failures
   with exponential backoff. If a diff request still fails after retries, that note is
   not created and the cursor does not advance past the revision, so a later run retries
@@ -59,8 +60,10 @@ or time:
 
 The body also omits the edit date and time. It links the page and editor, shows the
 size, `new page` and `minor` flags when applicable, the optional edit summary, and a
-link to a readable Wikipedia diff URL. Diff links preserve Unicode page titles and
-use `_` for spaces instead of percent-encoded titles.
+link to the Wikipedia diff (or the created revision for a new page). These links use
+only numeric revision IDs, so titles with Unicode or reserved URL characters need no
+percent encoding and the dedup identity remains stable if a page is renamed. Dedup
+lookups also recognize notes created with the earlier title-bearing URL formats.
 
 Regular edits are converted from MediaWiki's left/right HTML into one inline column:
 removed lines use `−` with a red background, added lines use `+` with a green

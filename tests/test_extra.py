@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from tests.support import SAMPLE_ROWS, make_edit
 from wikisync import render
 from wikisync.config import Config, _int, env_bool
@@ -18,21 +20,53 @@ def test_model_urls_and_lang():
     assert edit.user_contribs_url.endswith('/wiki/Special:Contributions/Tester')
 
 
-def test_diff_url_does_not_percent_encode_title():
+@pytest.mark.parametrize(
+    ('host', 'title'),
+    [
+        ('en.wikipedia.org', 'AT&T'),
+        ('en.wikipedia.org', 'C++'),
+        ('en.wikipedia.org', '99% Invisible'),
+        ('en.wikipedia.org', '"Heroes" (album)'),
+        ('en.wikipedia.org', "Schrödinger's cat"),
+        ('ru.wikipedia.org', 'Пенья, Хосе Луис Хордан'),
+    ],
+)
+def test_diff_url_uses_only_revision_ids_for_real_article_titles(host, title):
     edit = make_edit(
-        host='ru.wikipedia.org',
-        title='Пенья, Хосе Луис Хордан',
+        host=host,
+        title=title,
         revid=154036623,
         parentid=153423849,
     )
-    assert edit.diff_url == (
-        'https://ru.wikipedia.org/w/index.php?title=Пенья,_Хосе_Луис_Хордан&diff=154036623&oldid=153423849'
+    assert edit.diff_url == f'https://{host}/w/index.php?diff=154036623&oldid=153423849'
+    assert '%' not in edit.diff_url
+
+
+def test_diff_url_is_stable_when_page_title_changes():
+    before_move = make_edit(title='AT&T')
+    after_move = make_edit(title='AT and T')
+    assert before_move.diff_url == after_move.diff_url
+
+
+def test_diff_url_distinguishes_edits_to_same_article():
+    first = make_edit(title='AT&T', revid=100, parentid=99)
+    second = make_edit(title='AT&T', revid=101, parentid=100)
+    assert first.diff_url != second.diff_url
+
+
+def test_dedup_urls_include_historical_title_formats():
+    edit = make_edit(title='C++ & "More"')
+    assert edit.dedup_urls == (
+        'https://en.wikipedia.org/w/index.php?diff=100&oldid=99',
+        'https://en.wikipedia.org/w/index.php?title=C++_&_"More"&diff=100&oldid=99',
+        'https://en.wikipedia.org/w/index.php?title=C%2B%2B+%26+%22More%22&diff=100&oldid=99',
     )
 
 
-def test_new_page_diff_url_uses_own_revid_as_oldid():
-    edit = make_edit(revid=77, parentid=0, is_new=True)
-    assert 'diff=77' in edit.diff_url and 'oldid=77' in edit.diff_url
+@pytest.mark.parametrize('is_new', [False, True])
+def test_zero_parent_links_created_revision_regardless_of_flag(is_new):
+    edit = make_edit(revid=77, parentid=0, is_new=is_new)
+    assert edit.diff_url == 'https://en.wikipedia.org/w/index.php?oldid=77'
 
 
 # --- render -----------------------------------------------------------------

@@ -69,6 +69,6 @@ def test_title_default_and_clamping():
 
 def test_urls():
     e = _edit()
-    assert e.diff_url == 'https://en.wikipedia.org/w/index.php?title=Foo_Bar&diff=42&oldid=41'
+    assert e.diff_url == 'https://en.wikipedia.org/w/index.php?diff=42&oldid=41'
     assert e.user_contribs_url.endswith('/wiki/Special:Contributions/Jimbo_Wales')
     assert e.page_url.endswith('/wiki/Foo_Bar')

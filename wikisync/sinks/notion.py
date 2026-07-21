@@ -53,9 +53,10 @@ class NotionSink(Sink):
     def exists(self, edit: Edit) -> bool:
         if not self.dedup:
             return False
+        filters = [{'property': 'Diff URL', 'url': {'equals': url}} for url in edit.dedup_urls]
         resp = self.session.post(
             f'https://api.notion.com/v1/databases/{self.database_id}/query',
-            json={'filter': {'property': 'Diff URL', 'url': {'equals': edit.diff_url}}, 'page_size': 1},
+            json={'filter': {'or': filters}, 'page_size': 1},
             timeout=30,
         )
         if resp.status_code != 200:
@@ -64,14 +65,13 @@ class NotionSink(Sink):
         return bool(resp.json().get('results'))
 
     def export(self, edit: Edit, diff: DiffContent, title: str) -> None:
+        link_label = 'View revision on Wikipedia' if not edit.parentid else 'View diff on Wikipedia'
         children = [
             {
                 'object': 'block',
                 'type': 'paragraph',
                 'paragraph': {
-                    'rich_text': [
-                        {'type': 'text', 'text': {'content': 'View diff on Wikipedia', 'link': {'url': edit.diff_url}}}
-                    ]
+                    'rich_text': [{'type': 'text', 'text': {'content': link_label, 'link': {'url': edit.diff_url}}}]
                 },
             }
         ]

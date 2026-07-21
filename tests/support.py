@@ -95,12 +95,14 @@ class FakeNoteStore:
         self.notebooks = list(notebooks or [])
         self.total_notes = total_notes
         self.raise_on_find = raise_on_find
+        self.find_queries = []
 
     def createNote(self, token, note):
         self.created.append((token, note))
         return note
 
     def findNotesMetadata(self, token, note_filter, offset, max_notes, spec):
+        self.find_queries.append(note_filter.words)
         if self.raise_on_find:
             raise self.raise_on_find
 

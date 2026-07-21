@@ -51,6 +51,11 @@ def _size_color(sizediff: int) -> str:
     return '#555555'
 
 
+def _search_phrase(value: str) -> str:
+    """Escape a value embedded in an Evernote quoted search term."""
+    return value.replace('\\', '\\\\').replace('"', '\\"')
+
+
 class EvernoteSink(Sink):
     name = 'evernote'
 
@@ -112,7 +117,8 @@ class EvernoteSink(Sink):
         if not self.dedup:
             return False
         try:
-            note_filter = NoteFilter(words=f'sourceURL:"{edit.diff_url}"')
+            terms = [f'sourceURL:"{_search_phrase(url)}"' for url in edit.dedup_urls]
+            note_filter = NoteFilter(words='any: ' + ' '.join(terms))
             result = self._store().findNotesMetadata(
                 self.token, note_filter, 0, 1, NotesMetadataResultSpec(includeTitle=False)
             )
@@ -159,9 +165,8 @@ class EvernoteSink(Sink):
         parts = [header, meta]
         if edit.comment:
             parts.append(f'<div style="margin-bottom:4px;color:#444444;">Summary: <i>{_esc(edit.comment)}</i></div>')
-        parts.append(
-            f'<div style="margin-bottom:8px;"><a href={_attr(edit.diff_url)}>View diff on Wikipedia →</a></div>'
-        )
+        link_label = 'View revision on Wikipedia' if not edit.parentid else 'View diff on Wikipedia'
+        parts.append(f'<div style="margin-bottom:8px;"><a href={_attr(edit.diff_url)}>{link_label} →</a></div>')
         parts.append(self._render_diff(diff))
         parts.append(
             '<div style="font-size:10px;color:#777777;margin-top:12px;">'
