@@ -17,6 +17,15 @@ def _sink(**kw):
     return EvernoteSink(token='tok', **kw)
 
 
+def _assert_repo_footer(enml):
+    root = ET.fromstring(enml.encode('utf-8'))
+    footer = root[-1]
+    assert footer.tag == 'div'
+    assert 'font-size:10px' in footer.get('style')
+    assert ''.join(footer.itertext()) == 'Note created by wikipedia_diffs_to_evernote'
+    assert footer.find('a').get('href') == 'https://github.com/vitaly-zdanevich/wikipedia_diffs_to_evernote'
+
+
 # --- from_env ---------------------------------------------------------------
 def test_from_env_requires_token():
     with pytest.raises(SystemExit):
@@ -37,7 +46,7 @@ def test_from_env_parses_options():
 # --- ENML construction ------------------------------------------------------
 def test_build_enml_diff_is_wellformed_and_clean():
     enml = _sink()._build_enml(make_edit(comment='x & <y> "z"'), DiffContent('diff', SAMPLE_ROWS))
-    ET.fromstring(enml.encode('utf-8'))  # raises if not well-formed XML
+    _assert_repo_footer(enml)  # also raises if the ENML is not well-formed XML
     assert 'class=' not in enml and ' id=' not in enml and 'data-marker' not in enml
     assert '#d6f5d6' in enml and '#ffe0e0' in enml  # added/removed colours
     assert 'Special:Contributions/Tester' in enml  # clickable editor
@@ -49,8 +58,8 @@ def test_build_enml_diff_is_wellformed_and_clean():
 def test_build_enml_newpage_and_unavailable_wellformed():
     sink = _sink()
     edit = make_edit(is_new=True, parentid=0)
-    ET.fromstring(sink._build_enml(edit, DiffContent('newpage', '== H == <b> & x')).encode('utf-8'))
-    ET.fromstring(sink._build_enml(edit, DiffContent('unavailable')).encode('utf-8'))
+    _assert_repo_footer(sink._build_enml(edit, DiffContent('newpage', '== H == <b> & x')))
+    _assert_repo_footer(sink._build_enml(edit, DiffContent('unavailable')))
 
 
 # --- export / exists / notebook (note store mocked) -------------------------

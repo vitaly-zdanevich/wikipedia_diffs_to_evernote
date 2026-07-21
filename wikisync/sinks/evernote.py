@@ -31,6 +31,7 @@ _ENML_HEADER = (
 )
 # Keep notes comfortably under Evernote's 5 MB ENML limit.
 _MAX_DIFF_CHARS = 400_000
+_REPO_URL = 'https://github.com/vitaly-zdanevich/wikipedia_diffs_to_evernote'
 
 
 def _esc(text: str) -> str:
@@ -162,6 +163,10 @@ class EvernoteSink(Sink):
             f'<div style="margin-bottom:8px;"><a href={_attr(edit.diff_url)}>View diff on Wikipedia →</a></div>'
         )
         parts.append(self._render_diff(diff))
+        parts.append(
+            '<div style="font-size:10px;color:#777777;margin-top:12px;">'
+            + f'Note created by <a href={_attr(_REPO_URL)}>wikipedia_diffs_to_evernote</a></div>'
+        )
         return _ENML_HEADER + '<en-note>' + ''.join(parts) + '</en-note>'
 
     def _render_diff(self, diff: DiffContent) -> str:
