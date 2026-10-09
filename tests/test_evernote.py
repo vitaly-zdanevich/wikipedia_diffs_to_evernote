@@ -49,7 +49,7 @@ def test_build_enml_diff_is_wellformed_and_clean():
     _assert_repo_footer(enml)  # also raises if the ENML is not well-formed XML
     assert 'class=' not in enml and ' id=' not in enml and 'data-marker' not in enml
     assert '#d6f5d6' in enml and '#ffe0e0' in enml  # added/removed colours
-    assert 'Special:Contributions/Tester' in enml  # clickable editor
+    assert 'Editor:' not in enml and 'Special:Contributions/Tester' not in enml
     assert '&amp;' in enml and '&lt;y&gt;' in enml  # escaped summary
     assert '2026-06-12' not in enml  # timestamp is intentionally omitted
     assert '<hr' not in enml  # no divider before the inline diff
@@ -62,7 +62,7 @@ def test_build_enml_newpage_and_unavailable_wellformed():
     edit = make_edit(is_new=True, parentid=0)
     enml = sink._build_enml(edit, DiffContent('newpage', '== H == <b> & x'))
     _assert_repo_footer(enml)
-    assert 'View revision on Wikipedia' in enml
+    assert 'View revision on Wikipedia' not in enml
     _assert_repo_footer(sink._build_enml(edit, DiffContent('unavailable')))
 
 
@@ -95,7 +95,7 @@ def test_export_uses_revision_only_diff_url_for_unicode_title():
     assert edit.diff_url == 'https://ru.wikipedia.org/w/index.php?diff=154036623&oldid=153423849'
     assert note.attributes.sourceURL == edit.diff_url
     root = ET.fromstring(note.content.encode('utf-8'))
-    assert edit.diff_url in [link.get('href') for link in root.iter('a')]
+    assert [link.get('href') for link in root.iter('a')] == [edit.page_url, ev._REPO_URL]
 
 
 def test_exists_dedup():

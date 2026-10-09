@@ -158,15 +158,12 @@ class EvernoteSink(Sink):
         )
         meta = (
             '<div style="margin-bottom:4px;">'
-            + f'Editor: <a href={_attr(edit.user_contribs_url)}>{_esc(edit.username)}</a> · '
             + f'<span style="color:{sign_color};font-weight:bold;">{edit.sizediff:+d} bytes</span>'
             + f'{_esc(flag_text)}</div>'
         )
         parts = [header, meta]
         if edit.comment:
             parts.append(f'<div style="margin-bottom:4px;color:#444444;">Summary: <i>{_esc(edit.comment)}</i></div>')
-        link_label = 'View revision on Wikipedia' if not edit.parentid else 'View diff on Wikipedia'
-        parts.append(f'<div style="margin-bottom:8px;"><a href={_attr(edit.diff_url)}>{link_label} →</a></div>')
         parts.append(self._render_diff(diff))
         parts.append(
             '<div style="font-size:10px;color:#777777;margin-top:12px;">'
@@ -179,10 +176,10 @@ class EvernoteSink(Sink):
             try:
                 xhtml = render.diff_rows_to_xhtml(diff.html)
             except Exception as exc:
-                log.warning('Diff render failed (%s); linking instead.', exc)
-                return '<div><i>Diff could not be rendered inline — use the link above.</i></div>'
+                log.warning('Diff render failed (%s); see the note source URL.', exc)
+                return '<div><i>Diff could not be rendered inline — open the source URL in note info.</i></div>'
             if len(xhtml) > _MAX_DIFF_CHARS:
-                return '<div><i>Diff is too large to embed — use the link above to view it.</i></div>'
+                return '<div><i>Diff is too large to embed — open the source URL in note info.</i></div>'
             return xhtml
         if diff.kind == 'newpage' and diff.html:
             text = diff.html
@@ -193,4 +190,4 @@ class EvernoteSink(Sink):
                 'white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:12px;">'
                 f'{_esc(text)}</div>'
             )
-        return '<div><i>Diff unavailable — use the link above to view it on Wikipedia.</i></div>'
+        return '<div><i>Diff unavailable — open the source URL in note info.</i></div>'

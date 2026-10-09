@@ -58,12 +58,14 @@ or time:
 [ru] Пенья, Хосе Луис Хордан (-44 B)
 ```
 
-The body also omits the edit date and time. It links the page and editor, shows the
-size, `new page` and `minor` flags when applicable, the optional edit summary, and a
-link to the Wikipedia diff (or the created revision for a new page). These links use
-only numeric revision IDs, so titles with Unicode or reserved URL characters need no
-percent encoding and the dedup identity remains stable if a page is renamed. Dedup
-lookups also recognize notes created with the earlier title-bearing URL formats.
+The body links the page and shows the size, `new page` and `minor` flags when
+applicable, and the optional edit summary. It omits the edit date, time, editor, and
+standalone diff link. The Wikipedia diff URL (or the created revision URL for a new
+page) is stored in the note's `sourceURL` metadata, accessible through note info.
+These URLs use only numeric revision IDs, so titles with Unicode or reserved URL
+characters need no percent encoding and the dedup identity remains stable if a page
+is renamed. Dedup lookups also recognize notes created with the earlier
+title-bearing URL formats.
 
 Regular edits are converted from MediaWiki's left/right HTML into one inline column:
 removed lines use `−` with a red background, added lines use `+` with a green
