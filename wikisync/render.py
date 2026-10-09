@@ -22,9 +22,10 @@ from .models import Edit
 
 log = logging.getLogger(__name__)
 
+# Pair highlight backgrounds with explicit black text for readable note rendering.
 _INLINE_STYLES = {
-    'del': 'background:#ffacac;text-decoration:none;',
-    'ins': 'background:#8ef58e;text-decoration:none;',
+    'del': 'background:#ffacac;color:#000;text-decoration:none;',
+    'ins': 'background:#8ef58e;color:#000;text-decoration:none;',
 }
 _DIFF_STYLE = 'font-family:monospace;font-size:12px;line-height:1.45;'
 _LINE_BASE_STYLE = 'margin:0;padding:1px 6px;white-space:pre-wrap;word-break:break-word;'

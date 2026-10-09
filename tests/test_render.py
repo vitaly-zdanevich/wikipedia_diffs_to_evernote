@@ -30,8 +30,8 @@ def test_xhtml_is_well_formed_and_inline_styled():
     # Left/right duplicates collapse into one ordered unified sequence.
     lines = [''.join(line.itertext()) for line in root]
     assert lines == ['@@ Line 1: @@', '−foo old', '+foo new', ' unchanged']
-    assert root.find('.//del').get('style') == 'background:#ffacac;text-decoration:none;'
-    assert root.find('.//ins').get('style') == 'background:#8ef58e;text-decoration:none;'
+    assert root.find('.//del').get('style') == 'background:#ffacac;color:#000;text-decoration:none;'
+    assert root.find('.//ins').get('style') == 'background:#8ef58e;color:#000;text-decoration:none;'
 
 
 def test_text_diff_has_unified_markers():
